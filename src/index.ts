@@ -5,6 +5,8 @@ import {config} from 'dotenv';
 import { GetUsersController } from './controllers/get-users/get-user';
 import {MongoGetUsersRepository} from './repositories/get-users/mongo-get-users'
 import { MongoClient } from './database/mongo';
+import { MongoUpdateUserRepository } from './repositories/update-user/mongo-update-user';
+import { UpdateUserController } from './controllers/update-ser/update-user';
 
 const main = async () => {
     config();
@@ -34,6 +36,17 @@ const main = async () => {
         );
 
         return res.status(statusCode).send(body);
+    });
+
+    app.patch("/user/:id", async (req, res) => {
+        const mongoUpdateUserRepository = new MongoUpdateUserRepository();
+
+        const updateUserController = new UpdateUserController(mongoUpdateUserRepository);
+
+        const {body, statusCode} = await updateUserController.handle({
+            body: req.body,
+            params: req.params
+        })
     })
 
     const port = process.env.PORT || 8000;
