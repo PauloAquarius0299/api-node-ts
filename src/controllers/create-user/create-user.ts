@@ -1,43 +1,38 @@
-import { HttpRequest, IController, HttpResponse } from './../protocols';
-import { User } from '../../models/user';
-import { CreateUserParams, ICreateUserRepository } from './protocols';
-import validator from 'validator';
+import validator from "validator";
+
+import { User } from "../../models/user";
+import { badRequest, created, serverErrors } from "../helpers";
+import { HttpRequest, HttpResponse, IController } from "../protocols";
+import { CreateUserParams, ICreateUserRepository } from "./protocols";
+
 export class CreateUserController implements IController {
-    constructor(private readonly createUserRepository: ICreateUserRepository) {}
+  constructor(private readonly createUserRepository: ICreateUserRepository) {}
 
-    async handle(httpRequest: HttpRequest<CreateUserParams>): Promise<HttpResponse<User>> {
-        try {
-            const requiredFields = ['firstName', 'lastName', 'email', 'password']
+  async handle(
+    httpRequest: HttpRequest<CreateUserParams>
+  ): Promise<HttpResponse<User | string>> {
+    try {
+      const requiredFields = ["firstName", "lastName", "email", "password"];
 
-            for (const field of requiredFields){
-                if(!httpRequest?.body?.[field as keyof CreateUserParams]?.length) {
-                    return {
-                    statusCode: 400,
-                    body: `Field ${field} is required`,
-                };
-              }
-            }
-
-            const emailIsValid = validator.isEmail(httpRequest.body!.email);
-
-            if(!emailIsValid){
-                return {
-                    statusCode: 400,
-                    body: 'Email is invalid'
-                }
-            }
-
-            const user = await this.createUserRepository.createUser(httpRequest.body!);
-
-            return {
-                statusCode: 201,
-                body: user,
-            }
-        } catch (error) {
-            return {
-                statusCode: 500,
-                body: 'something went wrong'
-            }
+      for (const field of requiredFields) {
+        if (!httpRequest?.body?.[field as keyof CreateUserParams]?.length) {
+          return badRequest(`Field ${field} is required`);
         }
+      }
+
+      const emailIsValid = validator.isEmail(httpRequest.body!.email);
+
+      if (!emailIsValid) {
+        return badRequest("E-mail is invalid");
+      }
+
+      const user = await this.createUserRepository.createUser(
+        httpRequest.body!
+      );
+
+      return created<User>(user);
+    } catch (error) {
+      return serverErrors();
     }
+  }
 }
